@@ -8,6 +8,7 @@ import base64
 import hashlib
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import unpad
+from lzutf8 import Decompressor
 
 parser = argparse.ArgumentParser(description='Get bookmarks from an XBrowserSync api')
 
@@ -61,9 +62,11 @@ nonce_iv = all_bookmarks_encrypted[:16]
 ciphertext = all_bookmarks_encrypted[16:-16]
 tag = all_bookmarks_encrypted[-16:]
 
-try:   
-    cipher = AES.new(key, AES.MODE_GCM, nonce=nonce_iv)
-    all_bookmarks_decrypted = cipher.decrypt_and_verify(ciphertext, tag)
-except ValueError, KeyError:
-    print("Incorrect decryption")
+cipher = AES.new(key, AES.MODE_GCM, nonce=nonce_iv)
+all_bookmarks_decrypted = cipher.decrypt_and_verify(ciphertext, tag)
+
+decompressor = Decompressor()
+all_bookmarks_decompressed = decompressor.decompressBlockToString(all_bookmarks_decrypted)
+all_bookmarks_json = json.loads(all_bookmarks_decompressed)
+
 
