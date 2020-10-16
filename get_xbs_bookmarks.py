@@ -10,22 +10,23 @@ from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import unpad
 from lzutf8 import Decompressor
 
-parser = argparse.ArgumentParser(description='Get bookmarks from an XBrowserSync api')
+parser = argparse.ArgumentParser(
+    description='Get bookmarks from an XBrowserSync api')
 
-parser.add_argument('-u', '--url', 
-        default='https://api.xbrowsersync.org',
-        help='url of the xbrowsersync api service, defaults to https://api.xbrowsersync.org',
-        )
+parser.add_argument('-u', '--url',
+                    default='https://api.xbrowsersync.org',
+                    help='url of the xbrowsersync api service, defaults to https://api.xbrowsersync.org',
+                    )
 
 required = parser.add_argument_group('required arguments')
-required.add_argument('-s', '--sync-id', 
-        required=True,
-        help='sync ID to get bookmarks from',
-        )
-required.add_argument('-p', '--password', 
-        required=True, 
-        help='decryption password',
-        )        
+required.add_argument('-s', '--sync-id',
+                      required=True,
+                      help='sync ID to get bookmarks from',
+                      )
+required.add_argument('-p', '--password',
+                      required=True,
+                      help='decryption password',
+                      )
 
 args = parser.parse_args()
 
@@ -57,7 +58,8 @@ sync_data_encrypted = json.loads(sync_data_encrypted_raw)
 all_bookmarks_encrypted = base64.b64decode(sync_data_encrypted["bookmarks"])
 
 #key = base64.b64encode(hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), sync_id.encode('utf-8'), 250000, 32))
-key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), sync_id.encode('utf-8'), 250000, 32)
+key = hashlib.pbkdf2_hmac('sha256', password.encode(
+    'utf-8'), sync_id.encode('utf-8'), 250000, 32)
 nonce_iv = all_bookmarks_encrypted[:16]
 ciphertext = all_bookmarks_encrypted[16:-16]
 tag = all_bookmarks_encrypted[-16:]
@@ -66,7 +68,6 @@ cipher = AES.new(key, AES.MODE_GCM, nonce=nonce_iv)
 all_bookmarks_decrypted = cipher.decrypt_and_verify(ciphertext, tag)
 
 decompressor = Decompressor()
-all_bookmarks_decompressed = decompressor.decompressBlockToString(all_bookmarks_decrypted)
+all_bookmarks_decompressed = decompressor.decompressBlockToString(
+    all_bookmarks_decrypted)
 all_bookmarks_json = json.loads(all_bookmarks_decompressed)
-
-
