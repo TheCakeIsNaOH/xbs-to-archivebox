@@ -4,6 +4,10 @@ import sys
 import argparse
 import urllib.request
 import json
+import base64
+import hashlib
+from Cryptodome.Cipher import AES
+from Cryptodome.Util.Padding import unpad
 
 parser = argparse.ArgumentParser(description='Get bookmarks from an XBrowserSync api')
 
@@ -26,7 +30,7 @@ args = parser.parse_args()
 
 base_url = args.url.strip().rstrip('/')
 password = args.password
-syncid = args.sync_id
+sync_id = args.sync_id
 
 try:
     if urllib.request.urlopen(base_url).getcode() != 200:
@@ -35,7 +39,7 @@ except:
     print("ERROR: URL cannot be reached or is not working correctly. URl: " + base_url)
     sys.exit()
 
-sync_id_url = base_url + "/bookmarks/" + syncid
+sync_id_url = base_url + "/bookmarks/" + sync_id
 
 try:
     sync_id_url_response = urllib.request.urlopen(sync_id_url)
@@ -47,4 +51,19 @@ except:
     print("ERROR: URL cannot be reached or is not working correctly. Check that your sync ID is correct.")
     print("URl: " + base_url)
     sys.exit()
+
+sync_data_encrypted = json.loads(sync_data_encrypted_raw)
+all_bookmarks_encrypted = base64.b64decode(sync_data_encrypted["bookmarks"])
+
+#key = base64.b64encode(hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), sync_id.encode('utf-8'), 250000, 32))
+key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), sync_id.encode('utf-8'), 250000, 32)
+nonce_iv = all_bookmarks_encrypted[:16]
+ciphertext = all_bookmarks_encrypted[16:-16]
+tag = all_bookmarks_encrypted[-16:]
+
+try:   
+    cipher = AES.new(key, AES.MODE_GCM, nonce=nonce_iv)
+    all_bookmarks_decrypted = cipher.decrypt_and_verify(ciphertext, tag)
+except ValueError, KeyError:
+    print("Incorrect decryption")
 
