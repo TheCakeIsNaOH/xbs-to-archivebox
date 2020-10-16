@@ -50,14 +50,14 @@ try:
     sync_data_encrypted_raw = sync_id_url_response.read().decode('utf-8')
     sync_id_url_response.close()
 except:
-    print("ERROR: URL cannot be reached or is not working correctly. Check that your sync ID is correct.")
+    print("ERROR: URL cannot be reached or is not working correctly.")
+    print("Check that your sync ID is correct.")
     print("URl: " + base_url)
     sys.exit()
 
 sync_data_encrypted = json.loads(sync_data_encrypted_raw)
 all_bookmarks_encrypted = base64.b64decode(sync_data_encrypted["bookmarks"])
 
-#key = base64.b64encode(hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), sync_id.encode('utf-8'), 250000, 32))
 key = hashlib.pbkdf2_hmac('sha256', password.encode(
     'utf-8'), sync_id.encode('utf-8'), 250000, 32)
 nonce_iv = all_bookmarks_encrypted[:16]
