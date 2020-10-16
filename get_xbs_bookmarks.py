@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 
-import sys, argparse
+import sys
+import argparse
+import urllib.request
+import json
 
 parser = argparse.ArgumentParser(description='Get bookmarks from an XBrowserSync api')
 
@@ -21,10 +24,27 @@ required.add_argument('-p', '--password',
 
 args = parser.parse_args()
 
-url = args.url
+base_url = args.url.strip().rstrip('/')
 password = args.password
 syncid = args.sync_id
 
-print("url: " + url)
-print("password: " + password) 
-print("sync ID: " + syncid)
+try:
+    if urllib.request.urlopen(base_url).getcode() != 200:
+        raise BadURL("URL cannot be reached or is not working correctly")
+except:
+    print("ERROR: URL cannot be reached or is not working correctly. URl: " + base_url)
+    sys.exit()
+
+sync_id_url = base_url + "/bookmarks/" + syncid
+
+try:
+    sync_id_url_response = urllib.request.urlopen(sync_id_url)
+    if sync_id_url_response.getcode() != 200:
+        raise BadURL("URL cannot be reached or is not working correctly")
+    sync_data_encrypted_raw = sync_id_url_response.read().decode('utf-8')
+    sync_id_url_response.close()
+except:
+    print("ERROR: URL cannot be reached or is not working correctly. Check that your sync ID is correct.")
+    print("URl: " + base_url)
+    sys.exit()
+
