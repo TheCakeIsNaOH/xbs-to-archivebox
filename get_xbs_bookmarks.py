@@ -27,6 +27,10 @@ required.add_argument('-p', '--password',
                       required=True,
                       help='decryption password',
                       )
+required.add_argument('-o', '--output',
+                      required=True,
+                      help='output file with json',
+                      )
 
 args = parser.parse_args()
 
@@ -70,4 +74,9 @@ all_bookmarks_decrypted = cipher.decrypt_and_verify(ciphertext, tag)
 decompressor = Decompressor()
 all_bookmarks_decompressed = decompressor.decompressBlockToString(
     all_bookmarks_decrypted)
+    
 all_bookmarks_json = json.loads(all_bookmarks_decompressed)
+all_bookmarks_decompressed = json.dumps(all_bookmarks_json, indent=4)
+
+with open(args.output, "w") as outputFile:
+    outputFile.write(all_bookmarks_decompressed)
