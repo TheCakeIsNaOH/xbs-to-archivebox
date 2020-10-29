@@ -54,7 +54,10 @@ def filter_bookmarks(bookmarks, blacklist_regex):
                 print('found url in children dict')
                 raise
         elif "url" in bookmarks.keys():
-            urls.append(bookmarks['url'])
+            if bookmarks['url'].startswith("http"):
+                urls.append(bookmarks['url'])
+            else:
+                print("url not http, ignoring: " + bookmarks['url'])
         else:
             print('did not find children or url in dict')
             raise
