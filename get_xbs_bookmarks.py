@@ -10,6 +10,7 @@ from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import unpad
 from lzutf8 import Decompressor
 
+# Setup arguments
 parser = argparse.ArgumentParser(
     description='Get bookmarks from an XBrowserSync api')
 
@@ -32,12 +33,13 @@ required.add_argument('-o', '--output',
                       help='output file with json',
                       )
 
+#Get args
 args = parser.parse_args()
-
 base_url = args.url.strip().rstrip('/')
 password = args.password
 sync_id = args.sync_id
 
+#Check sync service url
 try:
     if urllib.request.urlopen(base_url).getcode() != 200:
         raise BadURL("URL cannot be reached or is not working correctly")
@@ -47,6 +49,7 @@ except:
 
 sync_id_url = base_url + "/bookmarks/" + sync_id
 
+#check and download data from sync service
 try:
     sync_id_url_response = urllib.request.urlopen(sync_id_url)
     if sync_id_url_response.getcode() != 200:
@@ -59,24 +62,30 @@ except:
     print("URl: " + base_url)
     sys.exit()
 
+#Get encrypted bookmark data from json response from api query
 sync_data_encrypted = json.loads(sync_data_encrypted_raw)
 all_bookmarks_encrypted = base64.b64decode(sync_data_encrypted["bookmarks"])
 
+#Setup decryption key and parameters
 key = hashlib.pbkdf2_hmac('sha256', password.encode(
     'utf-8'), sync_id.encode('utf-8'), 250000, 32)
 nonce_iv = all_bookmarks_encrypted[:16]
 ciphertext = all_bookmarks_encrypted[16:-16]
 tag = all_bookmarks_encrypted[-16:]
 
+#Decrypt bookmark data
 cipher = AES.new(key, AES.MODE_GCM, nonce=nonce_iv)
 all_bookmarks_decrypted = cipher.decrypt_and_verify(ciphertext, tag)
 
+#Decompress bookmark data with lzutf8
 decompressor = Decompressor()
 all_bookmarks_decompressed = decompressor.decompressBlockToString(
     all_bookmarks_decrypted)
-    
+
+#Prettify decrypted bookmark data
 all_bookmarks_json = json.loads(all_bookmarks_decompressed)
 all_bookmarks_decompressed = json.dumps(all_bookmarks_json, indent=4)
 
+#Write bookmark data to file
 with open(args.output, "w") as outputFile:
     outputFile.write(all_bookmarks_decompressed)
