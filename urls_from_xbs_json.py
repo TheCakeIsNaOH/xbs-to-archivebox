@@ -8,6 +8,12 @@ import re
 parser = argparse.ArgumentParser(
     description='Get filtered list of urls from XBS bookmark json')
 
+parser.add_argument('-m', '--filter-directories',
+                    nargs='+',
+                    dest='dirs',
+                    help='list of directory names to exclude, space separated, enclose in double quotes, case insensitive'
+                    )
+
 required = parser.add_argument_group('required arguments')
 required.add_argument('-i','--input',
                       required=True,
@@ -23,13 +29,14 @@ with open(args.input, "r") as inputFile:
 
 all_bookmarks = json.loads(all_bookmarks_raw)
 
-#todo:
-#   - input blacklist names via args
+#Get regex match object from args
+blacklist_names = []
+for directory in args.dirs:
+    blacklist_names.append(re.escape(directory.strip("'")))
+blacklist_regex_string = '(?:% s)' % '|'.join(blacklist_names)
+blacklist_regex = re.compile(blacklist_regex_string, re.IGNORECASE)
 
-blacklist_names = ['\[xbs\] Other', 'TestA', 'writing']
-blacklist_regex = '(?:% s)' % '|'.join(blacklist_names) 
-#print(blacklist_regex)
-
+#filter bookmark folders, return urls in non-blacklisted folders
 def filter_bookmarks(bookmarks, blacklist_regex):
     urls = []
     if isinstance(bookmarks, dict):
@@ -56,7 +63,6 @@ def filter_bookmarks(bookmarks, blacklist_regex):
     return urls
 
 urls = filter_bookmarks(all_bookmarks, blacklist_regex)
-#urls = [item for sublist in nested_urls for item in sublist]
 
 #print(*urls, sep = "\n") 
 
