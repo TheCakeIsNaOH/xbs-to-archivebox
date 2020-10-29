@@ -19,6 +19,10 @@ required.add_argument('-i','--input',
                       required=True,
                       help='path to file to get json from',
                       )
+required.add_argument('-o', '--output',
+                      required=True,
+                      help='output file with urls',
+                      )
 
 #Get args
 args = parser.parse_args()
@@ -64,6 +68,7 @@ def filter_bookmarks(bookmarks, blacklist_regex):
 
 urls = filter_bookmarks(all_bookmarks, blacklist_regex)
 
-#print(*urls, sep = "\n") 
-
+with open(args.output, "w") as outputFile:
+    for url in urls:
+        outputFile.write(url + "\n")
 
